@@ -1,0 +1,130 @@
+// src/pages/leaderboard.astro
+import LeaderboardTable from '../components/LeaderboardTable';
+
+export const prerender = false;   // Force SSR
+
+const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000";
+
+const page = Number(Astro.url.searchParams.get("page") || 1);
+const size = Number(Astro.url.searchParams.get("size") || 20);
+
+let items = [];
+let total = 0;
+let links = {};
+let error = null;
+
+try {
+  const res = await fetch(`${API_URL}/leaderboard?page=${page}&size=${size}`);
+  
+  if (!res.ok) {
+    throw new Error(`API returned ${res.status}`);
+  }
+
+  const data = await res.json();
+  items = data.items || [];
+  total = data.total || 0;
+  links = data.links || {};
+} catch (err: any) {
+  error = err.message || "Unknown error";
+  console.error(err);
+}
+// Simple title
+const title = `Leaderboard – Page ${page}`;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      h1 {
+        margin-bottom: 8px;
+      }
+      .subtitle {
+        color: #94a3b8;
+        margin-bottom: 30px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #1e293b;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      th, td {
+        padding: 14px 18px;
+        text-align: left;
+      }
+      th {
+        background: #334155;
+        font-weight: 600;
+      }
+      tr:nth-child(even) {
+        background: #1e293b;
+      }
+      tr:nth-child(odd) {
+        background: #0f172a;
+      }
+      .rank {
+        font-weight: 700;
+        color: #38bdf8;
+      }
+      .pagination {
+        margin-top: 24px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      a {
+        color: #38bdf8;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .error {
+        background: #7f1d1d;
+        padding: 16px;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Leaderboard</h1>
+    <p class="subtitle">SSR powered by Astro • Data from FastAPI + Redis</p>
+
+    {error ? (
+      <div class="error">
+        <strong>Error loading leaderboard:</strong> {error}
+      </div>
+    ) : (
+      <>
+        <!-- React island for interactive features -->
+        <LeaderboardTable client:load items={items} />
+
+        <div class="pagination">
+          {links.prev && <a href={links.prev}>← Previous</a>}
+          <span>Page {page}</span>
+          {links.next && <a href={links.next}>Next →</a>}
+          <span style="margin-left: auto; color: #94a3b8;">
+            Total players: {total}
+          </span>
+        </div>
+      </>
+    )}
+  </body>
+</html>
+
+<script>
+  // Optional: client-side refresh button logic can go here later
+</script>

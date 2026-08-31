@@ -1,0 +1,42 @@
+[app]
+name = "Leaderboard POC API"
+version = "1.0.0"
+debug = true
+host = "0.0.0.0"
+port = 8000
+
+[postgresql]
+# Full connection string (recommended)
+url = "postgresql+asyncpg://leaderboard:leaderboard@localhost:5432/leaderboard"
+
+# Or individual fields (if you prefer)
+host = "localhost"
+port = 5432
+user = "leaderboard"
+password = "leaderboard"
+database = "leaderboard"
+min_pool_size = 1
+max_pool_size = 10
+
+[mongodb]
+uri = "mongodb://localhost:27017"
+database = "leaderboard"
+
+[redis]
+url = "redis://localhost:6379/0"
+leaderboard_key = "leaderboard:global"
+
+[kafka]
+bootstrap_servers = "localhost:9092"
+topic_score_updates = "score.updates"
+consumer_group = "score-consumer-group"
+
+[sqs]
+queue_url = "http://localhost:4566/000000000000/leaderboard-side-effects"
+region = "us-east-1"
+access_key_id = "test"
+secret_access_key = "test"
+
+[rate_limit]
+max_requests = 10
+window_seconds = 60
