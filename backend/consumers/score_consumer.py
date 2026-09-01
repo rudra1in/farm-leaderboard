@@ -1,28 +1,42 @@
+from functools import lru_cache
 import asyncio
 import json
 import logging
-from datetime import datetime
+from datetime import datetime #,timezone
 
-from aiokafka import AIOKafkaConsumer
+# from confluent_kafka import Consumer, KafkaException, KafkaError
 import redis.asyncio as redis
 import asyncpg
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic_settings import BaseSettings
-from functools import lru_cache
+#from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings , SettingsConfigDict
+from pathlib import Path
+
 
 # ---------- Settings ----------
+# score_consumer.py
+# backend/consumers/score_consumer.py
+#
+# .env
+# poc-web-endtoend/.env
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
 class Settings(BaseSettings):
     DATABASE_URL: str
     MONGO_URI: str
     MONGO_DB: str = "leaderboard"
     REDIS_URL: str
+
     KAFKA_BOOTSTRAP_SERVERS: str
     KAFKA_TOPIC_SCORE_UPDATES: str = "score.updates"
 
-    class Config:
-        env_file = "../.env"
-        env_file_encoding = "utf-8"
-
+    model_config = SettingsConfigDict(
+        env_file=BASE_DIR / "../../.env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
@@ -47,8 +61,9 @@ async def init_connections():
 
     # PostgreSQL
     db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+    print(f"Connecting to PostgreSQL at {db_url}")
     pg_pool = await asyncpg.create_pool(db_url, min_size=1, max_size=10)
-
+    print(f"Connected successfully to PostgreSQL")
     # Create table if not exists
     async with pg_pool.acquire() as conn:
         await conn.execute("""
